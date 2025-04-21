@@ -272,6 +272,7 @@ void run_round_robin_static(ProcessQueue* queue, int quantum, int tempo_total) {
     free(last_execution);
 }
 
+
 void run_rm_static(ProcessQueue* queue, int tempo_total) {
     int* remaining_time = calloc(queue->size, sizeof(int));
     int* next_release = calloc(queue->size, sizeof(int));
@@ -291,11 +292,13 @@ void run_rm_static(ProcessQueue* queue, int tempo_total) {
         int selected = -1;
         int best_period = INT_MAX;
 
+        // Checando os novos lançamentos
         for (int i = 0; i < queue->size; i++) {
             if (current_time == next_release[i]) {
-                if (remaining_time[i] > 0) {
+                // Verificando falha de deadline
+                if (remaining_time[i] > 0 && current_time > current_deadline[i]) {
                     deadline_misses[i]++;
-                    printf("MISS: Processo %d perdeu o deadline anterior!\n", queue->list[i].id);
+                    printf("MISS: Processo %d perdeu o deadline! (Tempo: %d)\n", queue->list[i].id, current_time);
                 }
                 remaining_time[i] = queue->list[i].burst_time;
                 next_release[i] += queue->list[i].period;
@@ -303,6 +306,7 @@ void run_rm_static(ProcessQueue* queue, int tempo_total) {
             }
         }
 
+        // Selecionando o processo com o menor período
         for (int i = 0; i < queue->size; i++) {
             if (remaining_time[i] > 0 && queue->list[i].period < best_period) {
                 best_period = queue->list[i].period;
@@ -310,6 +314,7 @@ void run_rm_static(ProcessQueue* queue, int tempo_total) {
             }
         }
 
+        // Executando o processo selecionado
         if (selected != -1) {
             remaining_time[selected]--;
             total_cpu_time++;
@@ -325,8 +330,11 @@ void run_rm_static(ProcessQueue* queue, int tempo_total) {
     for (int i = 0; i < queue->size; i++)
         total_misses += deadline_misses[i];
 
+    // Cálculo da utilização da CPU
     float utilization = (float)total_cpu_time / tempo_total * 100.0;
-    float throughput = (float)(tempo_total / queue->list[0].period) * queue->size / tempo_total;
+
+    // Ajuste de throughput para refletir o número real de processos completados
+    float throughput = (float)total_cpu_time / tempo_total * queue->size;
 
     printf("\n--- Estatísticas RM (Static) ---\n");
     printf("Total de deadline misses: %d\n", total_misses);
@@ -338,6 +346,8 @@ void run_rm_static(ProcessQueue* queue, int tempo_total) {
     free(deadline_misses);
     free(current_deadline);
 }
+
+
 
 void run_edf_static(ProcessQueue* queue, int tempo_total) {
     int* remaining_time = calloc(queue->size, sizeof(int));
@@ -358,11 +368,13 @@ void run_edf_static(ProcessQueue* queue, int tempo_total) {
         int selected = -1;
         int earliest_deadline = INT_MAX;
 
+        // Checando os novos lançamentos
         for (int i = 0; i < queue->size; i++) {
             if (current_time == next_release[i]) {
-                if (remaining_time[i] > 0) {
+                // Verificando falha de deadline
+                if (remaining_time[i] > 0 && current_time > current_deadline[i]) {
                     deadline_misses[i]++;
-                    printf("MISS: Processo %d perdeu o deadline anterior!\n", queue->list[i].id);
+                    printf("MISS: Processo %d perdeu o deadline! (Tempo: %d)\n", queue->list[i].id, current_time);
                 }
                 remaining_time[i] = queue->list[i].burst_time;
                 next_release[i] += queue->list[i].period;
@@ -370,6 +382,7 @@ void run_edf_static(ProcessQueue* queue, int tempo_total) {
             }
         }
 
+        // Selecionando o processo com o deadline mais próximo
         for (int i = 0; i < queue->size; i++) {
             if (remaining_time[i] > 0 && current_deadline[i] < earliest_deadline) {
                 earliest_deadline = current_deadline[i];
@@ -377,6 +390,7 @@ void run_edf_static(ProcessQueue* queue, int tempo_total) {
             }
         }
 
+        // Executando o processo selecionado
         if (selected != -1) {
             remaining_time[selected]--;
             total_cpu_time++;
@@ -392,8 +406,11 @@ void run_edf_static(ProcessQueue* queue, int tempo_total) {
     for (int i = 0; i < queue->size; i++)
         total_misses += deadline_misses[i];
 
+    // Cálculo da utilização da CPU
     float utilization = (float)total_cpu_time / tempo_total * 100.0;
-    float throughput = (float)(tempo_total / queue->list[0].period) * queue->size / tempo_total;
+
+    // Ajuste de throughput para refletir o número real de processos completados
+    float throughput = (float)total_cpu_time / tempo_total * queue->size;
 
     printf("\n--- Estatísticas EDF (Static) ---\n");
     printf("Total de deadline misses: %d\n", total_misses);
