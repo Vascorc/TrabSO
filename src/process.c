@@ -36,7 +36,7 @@ Process generate_random_process(int id, int current_time) {
 
     p.id = id;
     p.arrival_time = cumulative_arrival;
-    p.burst_time = (int)generate_exponential(4.0); // média = 4
+    p.burst_time = (int)generate_exponential(4.0); //valor menor=menos misses
     if (p.burst_time <= 0) p.burst_time = 1;
 
     p.priority = rand() % 10;
@@ -51,6 +51,7 @@ Process generate_random_process(int id, int current_time) {
 
     return p;
 }
+
 
 void load_processes_from_file(char* filename, ProcessQueue *queue, int is_periodic) {
     FILE* file = fopen(filename, "r");
